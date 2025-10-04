@@ -16,6 +16,30 @@ Intel RealSense L515を使用したSSL_SLAM（Lightweight 3-D Localization and M
 - [ ] マッピングノード
 - [ ] ループクロージャ
 
+## 実行方法
+- bash# 特徴抽出ノード
+- ros2 run ssl_slam_ros2 ssl_feature_extraction_node
+
+- # オドメトリ推定ノード
+- ros2 run ssl_slam_ros2 odom_estimation_node_ros2
+
+## 依存関係
+- ROS2 Humble
+- PCL (Point Cloud Library)
+- Ceres Solver
+- Eigen3
+- librealsense v2.56.5
+
+## 参考文献
+Original: https://github.com/wh200720041/ssl_slam
+Paper: "Lightweight 3-D Localization and Mapping for Solid-State LiDAR" (IEEE RA-L 2021)
+EOF
+
+## コミット・プッシュ
+git add README.md
+git commit -m "Add README.md with project documentation"
+git push
+
 ## ビルド方法
 ```bash
 cd ~/ros2_ws
