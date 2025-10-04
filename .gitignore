@@ -1,0 +1,16 @@
+# ビルド生成物
+build/
+install/
+log/
+
+# VS Code
+.vscode/browse.vc.db*
+
+# バックアップファイル
+*.backup
+*.backup2
+*~
+
+# その他
+*.pyc
+__pycache__/
