@@ -60,4 +60,8 @@ ament_target_dependencies(laser_mapping_node_ros2
 )
 install(TARGETS laser_mapping_node_ros2 DESTINATION lib/${PROJECT_NAME})
 
+install(DIRECTORY rviz/
+  DESTINATION share/${PROJECT_NAME}/rviz
+)
+
 ament_package()
