@@ -1,4 +1,12 @@
-# ビルド生成物
+# 目的: Gitで追跡しないファイルの指定（Gitリポジトリに不要なファイルを含めない）
+
+# Test data (large files)
+test_data/L515_test_ros2/
+test_data/*.bag
+test_data/*.zip
+test_data/temp_open3d/
+
+# Build files
 build/
 install/
 log/
