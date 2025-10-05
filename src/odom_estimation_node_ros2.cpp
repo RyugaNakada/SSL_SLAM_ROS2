@@ -1,3 +1,5 @@
+// オドメトリ推定ノード
+
 // Author of SSL_SLAM: Wang Han 
 // Email wh200720041@gmail.com
 // Homepage https://wanghan.pro
