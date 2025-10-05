@@ -45,4 +45,19 @@ ament_target_dependencies(odom_estimation_node_ros2
 target_link_libraries(odom_estimation_node_ros2 ${CERES_LIBRARIES})
 install(TARGETS odom_estimation_node_ros2 DESTINATION lib/${PROJECT_NAME})
 
+install(DIRECTORY launch_ros2/
+  DESTINATION share/${PROJECT_NAME}/launch_ros2
+)
+
+# マッピングノード
+add_executable(laser_mapping_node_ros2 
+  src/laser_mapping_node_ros2.cpp
+  src/laserMappingClass.cpp
+  src/lidar.cpp
+)
+ament_target_dependencies(laser_mapping_node_ros2 
+  rclcpp sensor_msgs nav_msgs geometry_msgs pcl_conversions PCL
+)
+install(TARGETS laser_mapping_node_ros2 DESTINATION lib/${PROJECT_NAME})
+
 ament_package()
