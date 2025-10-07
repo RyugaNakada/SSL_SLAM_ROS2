@@ -1,24 +1,28 @@
 # 目的: Gitで追跡しないファイルの指定（Gitリポジトリに不要なファイルを含めない）
 
-# Test data (large files)
-test_data/L515_test_ros2/
-test_data/*.bag
-test_data/*.zip
-test_data/temp_open3d/
-
 # Build files
 build/
 install/
 log/
 
-# VS Code
-.vscode/browse.vc.db*
+# ROS2 bag files
+*.db3
+*.bag
+*.zip
 
-# バックアップファイル
-*.backup
-*.backup2
+# Test data (大きなファイルは除外)
+test_data/L515_test_ros2/
+test_data/*.zip
+test_data/*.bag
+
+# Temporary files
+*.swp
+*.swo
 *~
 
-# その他
-*.pyc
+# Python cache
 __pycache__/
+*.pyc
+
+# VS Code
+.vscode/

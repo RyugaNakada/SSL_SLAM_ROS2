@@ -208,8 +208,22 @@ private:
         odom_msg.pose.pose.position.y = odom.translation().y();
         odom_msg.pose.pose.position.z = odom.translation().z();
         
-        // 姿勢（クォータニオン）
+        // 姿勢(クォータニオン)
         Eigen::Quaterniond q(odom.rotation());
+        
+        // クォータニオンの正規化
+        double norm = sqrt(q.x() * q.x() + q.y() * q.y() + q.z() * q.z() + q.w() * q.w());
+        if (norm > 1e-6) {
+            q.x() /= norm;
+            q.y() /= norm;
+            q.z() /= norm;
+            q.w() /= norm;
+        } else {
+            // 正規化できない場合は単位クォータニオン
+            RCLCPP_WARN(this->get_logger(), "Quaternion normalization failed, using identity quaternion");
+            q = Eigen::Quaterniond::Identity();
+        }
+        
         odom_msg.pose.pose.orientation.x = q.x();
         odom_msg.pose.pose.orientation.y = q.y();
         odom_msg.pose.pose.orientation.z = q.z();
@@ -219,14 +233,14 @@ private:
         odom_publisher_->publish(odom_msg);
         
         // TF送信
-        publish_tf(stamp, odom);
+        publish_tf(stamp, odom, q);
         
         RCLCPP_DEBUG(this->get_logger(), "Odom published - pos: [%.2f, %.2f, %.2f]",
                     odom.translation().x(), odom.translation().y(), odom.translation().z());
     }
     
     // TFのパブリッシュ
-    void publish_tf(const builtin_interfaces::msg::Time& stamp, const Eigen::Isometry3d& odom)
+    void publish_tf(const builtin_interfaces::msg::Time& stamp, const Eigen::Isometry3d& odom, const Eigen::Quaterniond& q_normalized)
     {
         geometry_msgs::msg::TransformStamped transform_stamped;
         
@@ -239,12 +253,11 @@ private:
         transform_stamped.transform.translation.y = odom.translation().y();
         transform_stamped.transform.translation.z = odom.translation().z();
         
-        // 姿勢
-        Eigen::Quaterniond q(odom.rotation());
-        transform_stamped.transform.rotation.x = q.x();
-        transform_stamped.transform.rotation.y = q.y();
-        transform_stamped.transform.rotation.z = q.z();
-        transform_stamped.transform.rotation.w = q.w();
+        // 姿勢(正規化済みクォータニオン)
+        transform_stamped.transform.rotation.x = q_normalized.x();
+        transform_stamped.transform.rotation.y = q_normalized.y();
+        transform_stamped.transform.rotation.z = q_normalized.z();
+        transform_stamped.transform.rotation.w = q_normalized.w();
         
         // TF送信
         tf_broadcaster_->sendTransform(transform_stamped);

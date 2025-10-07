@@ -41,16 +41,19 @@ public:
         this->declare_parameter<double>("map_resolution", 0.4);
         this->declare_parameter<double>("displacement_threshold", 0.3);
         this->declare_parameter<double>("angular_threshold", 20.0);
+        this->declare_parameter<bool>("use_timestamp_check", false);  // 追加: タイムスタンプチェックの有効/無効
         
         double scan_period = this->get_parameter("scan_period").as_double();
         double map_resolution = this->get_parameter("map_resolution").as_double();
         displacement_threshold_ = this->get_parameter("displacement_threshold").as_double();
         angular_threshold_ = this->get_parameter("angular_threshold").as_double();
+        use_timestamp_check_ = this->get_parameter("use_timestamp_check").as_bool();
         
         RCLCPP_INFO(this->get_logger(), "Parameters - scan_period: %.2f, map_resolution: %.2f",
                    scan_period, map_resolution);
         RCLCPP_INFO(this->get_logger(), "Update thresholds - displacement: %.2fm, angular: %.1f°",
                    displacement_threshold_, angular_threshold_);
+        RCLCPP_INFO(this->get_logger(), "Timestamp check: %s", use_timestamp_check_ ? "enabled" : "disabled");
         
         // LiDARパラメータ設定
         lidar_param_.setScanPeriod(scan_period);
@@ -107,6 +110,7 @@ private:
     // 更新閾値
     double displacement_threshold_;
     double angular_threshold_;
+    bool use_timestamp_check_;  // 追加
     
     // ROS2通信
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_subscriber_;
@@ -139,31 +143,34 @@ private:
             {
                 mutex_lock_.lock();
                 
-                // タイムスタンプチェック
-                double pc_time = rclcpp::Time(pointcloud_buf_.front()->header.stamp).seconds();
-                double odom_time = rclcpp::Time(odom_buf_.front()->header.stamp).seconds();
-                double time_threshold = 0.5 * lidar_param_.scan_period;
-                
-                // 点群が古すぎる場合は破棄
-                if (pc_time < odom_time - time_threshold)
+                // タイムスタンプチェック（オプション）
+                if (use_timestamp_check_)
                 {
-                    pointcloud_buf_.pop();
-                    RCLCPP_WARN(this->get_logger(), 
-                               "Pointcloud timestamp too old, discarded. Time diff: %.3fs", 
-                               odom_time - pc_time);
-                    mutex_lock_.unlock();
-                    continue;
-                }
-                
-                // オドメトリが古すぎる場合は破棄
-                if (odom_time < pc_time - time_threshold)
-                {
-                    odom_buf_.pop();
-                    RCLCPP_WARN(this->get_logger(), 
-                               "Odometry timestamp too old, discarded. Time diff: %.3fs",
-                               pc_time - odom_time);
-                    mutex_lock_.unlock();
-                    continue;
+                    double pc_time = rclcpp::Time(pointcloud_buf_.front()->header.stamp).seconds();
+                    double odom_time = rclcpp::Time(odom_buf_.front()->header.stamp).seconds();
+                    double time_threshold = 0.5 * lidar_param_.scan_period;
+                    
+                    // 点群が古すぎる場合は破棄
+                    if (pc_time < odom_time - time_threshold)
+                    {
+                        pointcloud_buf_.pop();
+                        RCLCPP_WARN(this->get_logger(), 
+                                   "Pointcloud timestamp too old, discarded. Time diff: %.3fs", 
+                                   odom_time - pc_time);
+                        mutex_lock_.unlock();
+                        continue;
+                    }
+                    
+                    // オドメトリが古すぎる場合は破棄
+                    if (odom_time < pc_time - time_threshold)
+                    {
+                        odom_buf_.pop();
+                        RCLCPP_WARN(this->get_logger(), 
+                                   "Odometry timestamp too old, discarded. Time diff: %.3fs",
+                                   pc_time - odom_time);
+                        mutex_lock_.unlock();
+                        continue;
+                    }
                 }
                 
                 // データ取得
@@ -184,7 +191,7 @@ private:
                 // 現在姿勢の取得
                 Eigen::Isometry3d current_pose = Eigen::Isometry3d::Identity();
                 
-                // 回転（クォータニオン）
+                // 回転(クォータニオン)
                 Eigen::Quaterniond q(
                     odom_msg->pose.pose.orientation.w,
                     odom_msg->pose.pose.orientation.x,
@@ -205,7 +212,7 @@ private:
                 Eigen::Isometry3d delta_transform = last_pose_.inverse() * current_pose;
                 double displacement = delta_transform.translation().squaredNorm();
                 
-                // オイラー角から回転量計算（Z軸回転）
+                // オイラー角から回転量計算(Z軸回転)
                 Eigen::Vector3d euler = delta_transform.linear().eulerAngles(2, 1, 0);
                 double angular_change = std::abs(euler[0] * 180.0 / M_PI);
                 

@@ -21,7 +21,7 @@ void OdomEstimationClass::init(lidar::Lidar lidar_param, double map_resolution){
 
     odom = Eigen::Isometry3d::Identity();
     last_odom = Eigen::Isometry3d::Identity();
-    optimization_count=2;
+    optimization_count=12;  // 2 → 12に変更（より多くの反復）
 }
 
 void OdomEstimationClass::initMapWithPoints(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& edge_in, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& surf_in){
@@ -62,13 +62,24 @@ void OdomEstimationClass::updatePointsToMap(const pcl::PointCloud<pcl::PointXYZR
 
             ceres::Solver::Options options;
             options.linear_solver_type = ceres::DENSE_QR;
-            options.max_num_iterations = 4;
+            options.max_num_iterations = 20;  // 4 → 20に増加
             options.minimizer_progress_to_stdout = false;
             options.check_gradients = false;
             options.gradient_check_relative_precision = 1e-4;
             ceres::Solver::Summary summary;
 
             ceres::Solve(options, &problem, &summary);
+
+            ceres::Solve(options, &problem, &summary);
+
+            // デバッグ出力を追加
+            std::cout << "=== Ceres Solver Summary ===" << std::endl;
+            std::cout << summary.BriefReport() << std::endl;
+            std::cout << "Initial cost: " << summary.initial_cost << std::endl;
+            std::cout << "Final cost: " << summary.final_cost << std::endl;
+            std::cout << "Termination: " << summary.termination_type << std::endl;
+            // 詳細レポートが必要な場合
+            // std::cout << summary.FullReport() << std::endl;
 
         }
     }else{
