@@ -18,12 +18,15 @@ find_package(pcl_conversions REQUIRED)
 find_package(PCL REQUIRED)
 find_package(Ceres REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(OpenCV REQUIRED)
 
 include_directories(
-  include 
+  include
   ${PCL_INCLUDE_DIRS}
   ${CERES_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 # メインノード: SSL特徴抽出
@@ -46,15 +49,33 @@ target_link_libraries(odom_estimation_node_ros2 ${CERES_LIBRARIES})
 install(TARGETS odom_estimation_node_ros2 DESTINATION lib/${PROJECT_NAME})
 
 # マッピングノード
-add_executable(laser_mapping_node_ros2 
+add_executable(laser_mapping_node_ros2
   src/laser_mapping_node_ros2.cpp
   src/laserMappingClass.cpp
   src/lidar.cpp
 )
-ament_target_dependencies(laser_mapping_node_ros2 
+ament_target_dependencies(laser_mapping_node_ros2
   rclcpp sensor_msgs nav_msgs geometry_msgs pcl_conversions PCL
 )
 install(TARGETS laser_mapping_node_ros2 DESTINATION lib/${PROJECT_NAME})
+
+# カラー画像ノード
+add_executable(color_image_node src/color_image_node.cpp)
+ament_target_dependencies(color_image_node
+  rclcpp sensor_msgs cv_bridge
+)
+target_link_libraries(color_image_node ${OpenCV_LIBRARIES})
+install(TARGETS color_image_node DESTINATION lib/${PROJECT_NAME})
+
+# ループクロージャーノード
+add_executable(loop_closure_node
+  src/loop_closure_node.cpp
+  src/loopClosureClass.cpp
+)
+ament_target_dependencies(loop_closure_node
+  rclcpp sensor_msgs nav_msgs geometry_msgs visualization_msgs pcl_conversions PCL
+)
+install(TARGETS loop_closure_node DESTINATION lib/${PROJECT_NAME})
 
 # launchファイルのインストール
 install(DIRECTORY launch_ros2/

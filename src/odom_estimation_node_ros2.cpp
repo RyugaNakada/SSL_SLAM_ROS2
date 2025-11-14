@@ -18,7 +18,9 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <nav_msgs/msg/odometry.hpp>
+#include <nav_msgs/msg/path.hpp>
 #include <geometry_msgs/msg/quaternion.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -72,9 +74,13 @@ public:
         
         // Publisherの作成
         odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
-        
+        path_publisher_ = this->create_publisher<nav_msgs::msg::Path>("/odom_path", 10);
+
         // TF broadcasterの初期化
         tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+
+        // Pathメッセージの初期化
+        odom_path_.header.frame_id = "map";
         
         // 処理スレッドの開始
         process_thread_ = std::thread(&OdomEstimationNode::process_loop, this);
@@ -106,8 +112,12 @@ private:
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr edge_subscriber_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr surf_subscriber_;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_;
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_publisher_;
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-    
+
+    // 軌跡データ
+    nav_msgs::msg::Path odom_path_;
+
     // 処理スレッド
     std::thread process_thread_;
     
@@ -231,12 +241,23 @@ private:
         
         // パブリッシュ
         odom_publisher_->publish(odom_msg);
-        
+
+        // Pathメッセージに追加
+        geometry_msgs::msg::PoseStamped pose_stamped;
+        pose_stamped.header = odom_msg.header;
+        pose_stamped.pose = odom_msg.pose.pose;
+        odom_path_.poses.push_back(pose_stamped);
+        odom_path_.header.stamp = stamp;
+
+        // Path発行
+        path_publisher_->publish(odom_path_);
+
         // TF送信
         publish_tf(stamp, odom, q);
-        
-        RCLCPP_DEBUG(this->get_logger(), "Odom published - pos: [%.2f, %.2f, %.2f]",
-                    odom.translation().x(), odom.translation().y(), odom.translation().z());
+
+        RCLCPP_DEBUG(this->get_logger(), "Odom published - pos: [%.2f, %.2f, %.2f], path size: %zu",
+                    odom.translation().x(), odom.translation().y(), odom.translation().z(),
+                    odom_path_.poses.size());
     }
     
     // TFのパブリッシュ
