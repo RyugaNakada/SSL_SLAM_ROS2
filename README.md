@@ -73,8 +73,8 @@ ros2 run ssl_slam_ros2 loop_closure_node
 
 ### オドメトリノード
 - `scan_period`: スキャン周期（デフォルト: 0.1）
-- `max_dis`: 最大検出距離（デフォルト: 9.0m）
-- `min_dis`: 最小検出距離（デフォルト: 0.2m）
+- `max_dis`: 最大検出距離（デフォルト: 3.0m - L515最適化）
+- `min_dis`: 最小検出距離（デフォルト: 0.05m - L515最適化）
 - `map_resolution`: マップ解像度（デフォルト: 0.05m）
 
 ### マッピングノード

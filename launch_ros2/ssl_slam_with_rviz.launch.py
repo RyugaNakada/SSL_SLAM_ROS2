@@ -8,8 +8,8 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     # パラメータ定義
     scan_period = LaunchConfiguration('scan_period', default='0.1')
-    max_dis = LaunchConfiguration('max_dis', default='9.0')
-    min_dis = LaunchConfiguration('min_dis', default='0.2')
+    max_dis = LaunchConfiguration('max_dis', default='3.0')
+    min_dis = LaunchConfiguration('min_dis', default='0.05')
     map_resolution = LaunchConfiguration('map_resolution', default='0.4')
     odom_map_resolution = LaunchConfiguration('odom_map_resolution', default='0.05')
     
